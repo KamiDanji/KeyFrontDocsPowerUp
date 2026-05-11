@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IronWake Docs</title>
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    /* ── TOKENS ─────────────────────────────────────────────── */
+    :root {
+      --bg:           #0f0e0c;
+      --surface:      #161512;
+      --surface-2:    #1c1b18;
+      --surface-3:    #232220;
+      --border:       rgba(205,204,202,0.08);
+      --border-hover: rgba(205,204,202,0.14);
+      --text:         #cdccca;
+      --text-muted:   #797876;
+      --text-faint:   #4a4947;
+      --accent:       #4f98a3;
+      --accent-hover: #227f8b;
+      --accent-glow:  rgba(79,152,163,0.12);
+      --danger:       #a13544;
+      --success:      #6daa45;
+      --warning:      #e8af34;
+
+      --font-body:    'Inter', sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+
+      --radius-sm:  4px;
+      --radius-md:  8px;
+      --radius-lg:  12px;
+
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --transition: 160ms var(--ease-out);
+    }
+
+    /* ── RESET ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-font-smoothing: antialiased; font-size: 14px; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    button { cursor: pointer; font: inherit; background: none; border: none; color: inherit; }
+
+    /* ── HEADER ─────────────────────────────────────────────── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .header-logo {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 13px; font-weight: 600; color: var(--accent);
+      letter-spacing: 0.01em;
+    }
+    .header-logo svg { width: 16px; height: 16px; stroke: var(--accent); }
+
+    .header-spacer { flex: 1; }
+
+    .badge {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      padding: 2px 7px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      background: var(--surface-2);
+      transition: color var(--transition), border-color var(--transition);
+    }
+    .badge.saved  { color: var(--success); border-color: rgba(109,170,69,0.3); }
+    .badge.saving { color: var(--warning); border-color: rgba(232,175,52,0.3); }
+    .badge.unsaved { color: var(--accent); border-color: rgba(79,152,163,0.3); }
+
+    /* ── TOOLBAR ────────────────────────────────────────────── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .toolbar-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      transition: background var(--transition), color var(--transition);
+      font-size: 12px; font-weight: 600;
+      font-family: var(--font-mono);
+    }
+    .toolbar-btn:hover { background: var(--surface-3); color: var(--text); }
+    .toolbar-btn:active { background: var(--border); }
+    .toolbar-btn svg { width: 14px; height: 14px; stroke: currentColor; }
+
+    .toolbar-sep {
+      width: 1px; height: 18px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+
+    .tab-group {
+      display: flex;
+      gap: 2px;
+      margin-left: auto;
+    }
+    .tab-btn {
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: background var(--transition), color var(--transition);
+    }
+    .tab-btn.active {
+      background: var(--accent-glow);
+      color: var(--accent);
+    }
+    .tab-btn:hover:not(.active) { background: var(--surface-3); color: var(--text); }
+
+    /* ── MAIN AREA ──────────────────────────────────────────── */
+    .editor-wrap {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Editor */
+    #editor {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      padding: 16px 18px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.7;
+      border: none;
+      outline: none;
+      resize: none;
+      tab-size: 2;
+      caret-color: var(--accent);
+      white-space: pre-wrap;
+      overflow-y: auto;
+    }
+    #editor::placeholder { color: var(--text-faint); }
+    #editor::selection { background: rgba(79,152,163,0.2); }
+
+    /* Preview */
+    #preview {
+      flex: 1;
+      padding: 16px 20px;
+      overflow-y: auto;
+      background: var(--bg);
+      display: none;
+      line-height: 1.75;
+    }
+    #preview.visible { display: block; }
+
+    /* ── SPLIT MODE ─────────────────────────────────────────── */
+    .split-mode .editor-wrap { gap: 0; }
+    .split-mode #editor {
+      flex: 0 0 50%;
+      border-right: 1px solid var(--border);
+    }
+    .split-mode #preview { display: block; flex: 1; }
+
+    /* ── MARKDOWN RENDER ────────────────────────────────────── */
+    #preview h1, #preview h2, #preview h3, #preview h4 {
+      color: var(--text);
+      font-weight: 600;
+      margin: 1.4em 0 0.5em;
+      line-height: 1.3;
+    }
+    #preview h1 { font-size: 1.4em; border-bottom: 1px solid var(--border); padding-bottom: 0.4em; }
+    #preview h2 { font-size: 1.2em; }
+    #preview h3 { font-size: 1.05em; color: var(--accent); }
+    #preview h4 { font-size: 0.95em; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+
+    #preview p { margin: 0 0 0.9em; color: var(--text); }
+
+    #preview a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+    #preview ul, #preview ol { padding-left: 1.4em; margin: 0 0 0.9em; }
+    #preview li { margin: 0.25em 0; }
+    #preview li::marker { color: var(--accent); }
+
+    #preview blockquote {
+      border-left: 3px solid var(--accent);
+      margin: 0.8em 0;
+      padding: 0.5em 1em;
+      background: var(--accent-glow);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    #preview code {
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      background: var(--surface-3);
+      padding: 2px 5px;
+      border-radius: var(--radius-sm);
+      color: var(--accent);
+    }
+
+    #preview pre {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      overflow-x: auto;
+      margin: 0.8em 0;
+    }
+    #preview pre code {
+      background: none; padding: 0; color: var(--text);
+    }
+
+    #preview table {
+      width: 100%; border-collapse: collapse; margin: 0.8em 0;
+      font-size: 0.9em;
+    }
+    #preview th {
+      text-align: left;
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.85em;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: var(--surface-2);
+    }
+    #preview td {
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    #preview tr:last-child td { border-bottom: none; }
+    #preview tr:hover td { background: var(--surface-2); }
+
+    #preview hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.2em 0;
+    }
+
+    #preview strong { color: var(--text); font-weight: 600; }
+    #preview em { color: var(--text-muted); }
+
+    /* Checkboxes in preview */
+    #preview input[type="checkbox"] {
+      accent-color: var(--accent);
+      margin-right: 6px;
+    }
+
+    /* ── FOOTER ─────────────────────────────────────────────── */
+    .footer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 14px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .word-count {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-faint);
+    }
+
+    .footer-spacer { flex: 1; }
+
+    .btn-save {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 14px;
+      background: var(--accent);
+      color: #0f0e0c;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      transition: background var(--transition), transform var(--transition);
+    }
+    .btn-save:hover { background: var(--accent-hover); }
+    .btn-save:active { transform: scale(0.97); }
+    .btn-save svg { width: 13px; height: 13px; stroke: currentColor; }
+
+    .btn-clear {
+      display: flex; align-items: center; gap: 5px;
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 12px;
+      transition: border-color var(--transition), color var(--transition);
+    }
+    .btn-clear:hover { border-color: var(--danger); color: var(--danger); }
+    .btn-clear svg { width: 13px; height: 13px; stroke: currentColor; }
+
+    /* ── EMPTY STATE ─────────────────────────────────────────── */
+    .empty-hint {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 300ms;
+    }
+    .empty-hint.visible { opacity: 1; }
+    .empty-hint-icon { color: var(--text-faint); margin: 0 auto 10px; }
+    .empty-hint p { color: var(--text-faint); font-size: 12px; line-height: 1.6; }
+    .empty-hint code {
+      font-family: var(--font-mono); font-size: 11px;
+      color: var(--accent); opacity: 0.7;
+    }
+
+    /* ── LOADING ─────────────────────────────────────────────── */
+    .loading-overlay {
+      position: absolute; inset: 0;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10;
+      transition: opacity 300ms;
+    }
+    .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+      <polyline points="10 9 9 9 8 9"/>
+    </svg>
+    IronWake Docs
+  </div>
+  <div class="header-spacer"></div>
+  <span class="badge" id="save-badge">—</span>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="toolbar-btn" title="Bold (Ctrl+B)" onclick="insertMd('**','**')"><b>B</b></button>
+  <button class="toolbar-btn" title="Italic (Ctrl+I)" onclick="insertMd('*','*')"><i>I</i></button>
+  <button class="toolbar-btn" title="Strikethrough" onclick="insertMd('~~','~~')">
+    <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><path d="M16 6C16 6 14.5 4 12 4C9.5 4 8 5.5 8 7.5C8 11 12 11 12 11"/><path d="M8 18C8 18 9.5 20 12 20C14.5 20 16 18.5 16 16.5"/></svg>
+  </button>
+  <button class="toolbar-btn" title="Code" onclick="insertMd('`','`')">
+    <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+  </button>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn" title="Heading 1" onclick="insertLine('# ')"><b>H1</b></button>
+  <button class="toolbar-btn" title="Heading 2" onclick="insertLine('## ')"><b>H2</b></button>
+  <button class="toolbar-btn" title="Heading 3" onclick="insertLine('### ')">H3</button>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn" title="Bullet list" onclick="insertLine('- ')">
+    <svg viewBox="0 0 24 24"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg>
+  </button>
+  <button class="toolbar-btn" title="Numbered list" onclick="insertLine('1. ')">
+    <svg viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+  </button>
+  <button class="toolbar-btn" title="Checkbox" onclick="insertLine('- [ ] ')">
+    <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+  </button>
+  <button class="toolbar-btn" title="Blockquote" onclick="insertLine('> ')">
+    <svg viewBox="0 0 24 24"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+  </button>
+  <button class="toolbar-btn" title="Horizontal rule" onclick="insertLine('\n---\n')">—</button>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn" title="Link" onclick="insertLink()">
+    <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+  </button>
+  <button class="toolbar-btn" title="Code block" onclick="insertCodeBlock()">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9l-3 3 3 3"/><path d="M15 9l3 3-3 3"/></svg>
+  </button>
+
+  <div class="tab-group">
+    <button class="tab-btn active" id="tab-edit" onclick="setMode('edit')">Edit</button>
+    <button class="tab-btn" id="tab-split" onclick="setMode('split')">Split</button>
+    <button class="tab-btn" id="tab-preview" onclick="setMode('preview')">Preview</button>
+  </div>
+</div>
+
+<!-- EDITOR AREA -->
+<div class="editor-wrap" id="editor-wrap">
+  <textarea
+    id="editor"
+    spellcheck="false"
+    placeholder="Start writing in Markdown…&#10;&#10;# Card Title&#10;&#10;## Overview&#10;&#10;- [ ] Task one&#10;- [ ] Task two&#10;&#10;> Use blockquotes for key decisions"
+  ></textarea>
+  <div id="preview"></div>
+
+  <!-- Empty state hint -->
+  <div class="empty-hint" id="empty-hint">
+    <div class="empty-hint-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+    </div>
+    <p>Start writing Markdown here.<br>Changes save automatically to this card.<br><br><code># Heading</code> &nbsp;·&nbsp; <code>**bold**</code> &nbsp;·&nbsp; <code>- [ ] task</code></p>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <span class="word-count" id="word-count">0 words</span>
+  <div class="footer-spacer"></div>
+  <button class="btn-clear" id="btn-clear" onclick="clearDoc()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+    Clear
+  </button>
+  <button class="btn-save" id="btn-save" onclick="saveDoc()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    Save
+  </button>
+</div>
+
+<script>
+  // ── STATE ──────────────────────────────────────────────────
+  const t = TrelloPowerUp.iframe({ appKey: 'YOUR_TRELLO_API_KEY', appName: 'IronWake Docs' });
+  const STORAGE_KEY = 'ironwake-doc-content';
+
+  let currentMode = 'edit';
+  let saveTimeout = null;
+  let isDirty = false;
+
+  const editor     = document.getElementById('editor');
+  const preview    = document.getElementById('preview');
+  const wrap       = document.getElementById('editor-wrap');
+  const badge      = document.getElementById('save-badge');
+  const wordCount  = document.getElementById('word-count');
+  const emptyHint  = document.getElementById('empty-hint');
+  const loadingEl  = document.getElementById('loading-overlay');
+
+  // ── MARKED CONFIG ────────────────────────────────────────
+  marked.setOptions({
+    breaks: true,
+    gfm: true,
+    headerIds: false,
+    mangle: false
+  });
+
+  // Checkbox support in preview
+  const renderer = new marked.Renderer();
+  renderer.listitem = function(text, task, checked) {
+    if (task) {
+      return `<li style="list-style:none;margin-left:-1.4em"><input type="checkbox" ${checked ? 'checked' : ''} disabled> ${text}</li>`;
+    }
+    return `<li>${text}</li>`;
+  };
+  marked.use({ renderer });
+
+  // ── LOAD ──────────────────────────────────────────────────
+  async function loadDoc() {
+    try {
+      const content = await t.get('card', 'shared', STORAGE_KEY, '');
+      editor.value = content;
+      updatePreview();
+      updateWordCount();
+      updateEmptyHint();
+      setBadge('saved');
+    } catch (e) {
+      setBadge('—');
+    } finally {
+      loadingEl.classList.add('hidden');
+      t.sizeTo('#editor-wrap').catch(() => {});
+    }
+  }
+
+  // ── SAVE ──────────────────────────────────────────────────
+  async function saveDoc() {
+    setBadge('saving');
+    try {
+      await t.set('card', 'shared', STORAGE_KEY, editor.value);
+      isDirty = false;
+      setBadge('saved');
+    } catch(e) {
+      setBadge('unsaved');
+    }
+  }
+
+  function autoSave() {
+    isDirty = true;
+    setBadge('unsaved');
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(saveDoc, 1800);
+  }
+
+  function clearDoc() {
+    if (!editor.value || confirm('Clear all content on this card?')) {
+      editor.value = '';
+      updatePreview();
+      updateWordCount();
+      updateEmptyHint();
+      autoSave();
+    }
+  }
+
+  // ── BADGE ─────────────────────────────────────────────────
+  function setBadge(state) {
+    badge.className = 'badge';
+    const labels = { saved: '✓ Saved', saving: '· Saving', unsaved: '● Unsaved', '—': '—' };
+    badge.textContent = labels[state] || state;
+    if (state !== '—') badge.classList.add(state);
+  }
+
+  // ── VIEW MODES ────────────────────────────────────────────
+  function setMode(mode) {
+    currentMode = mode;
+    wrap.classList.remove('split-mode');
+    editor.style.display = '';
+    preview.classList.remove('visible');
+
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + mode).classList.add('active');
+
+    if (mode === 'edit') {
+      editor.focus();
+    } else if (mode === 'preview') {
+      updatePreview();
+      editor.style.display = 'none';
+      preview.classList.add('visible');
+    } else if (mode === 'split') {
+      wrap.classList.add('split-mode');
+      updatePreview();
+    }
+  }
+
+  // ── PREVIEW ───────────────────────────────────────────────
+  function updatePreview() {
+    if (currentMode === 'edit') return;
+    const md = editor.value || '*Nothing here yet.*';
+    preview.innerHTML = marked.parse(md);
+  }
+
+  // ── WORD COUNT ────────────────────────────────────────────
+  function updateWordCount() {
+    const words = editor.value.trim() ? editor.value.trim().split(/\s+/).length : 0;
+    const chars = editor.value.length;
+    wordCount.textContent = `${words} word${words !== 1 ? 's' : ''} · ${chars} chars`;
+  }
+
+  // ── EMPTY HINT ────────────────────────────────────────────
+  function updateEmptyHint() {
+    emptyHint.classList.toggle('visible', editor.value.trim() === '' && currentMode === 'edit');
+  }
+
+  // ── KEYBOARD SHORTCUTS ────────────────────────────────────
+  editor.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      saveDoc();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      e.preventDefault();
+      insertMd('**', '**');
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+      e.preventDefault();
+      insertMd('*', '*');
+    }
+    // Tab → 2 spaces
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const s = editor.selectionStart;
+      const e2 = editor.selectionEnd;
+      editor.value = editor.value.substring(0, s) + '  ' + editor.value.substring(e2);
+      editor.selectionStart = editor.selectionEnd = s + 2;
+    }
+  });
+
+  editor.addEventListener('input', function() {
+    updatePreview();
+    updateWordCount();
+    updateEmptyHint();
+    autoSave();
+  });
+
+  // ── TOOLBAR HELPERS ───────────────────────────────────────
+  function insertMd(before, after) {
+    const s = editor.selectionStart;
+    const e = editor.selectionEnd;
+    const selected = editor.value.substring(s, e);
+    const replacement = before + (selected || 'text') + after;
+    editor.value = editor.value.substring(0, s) + replacement + editor.value.substring(e);
+    editor.selectionStart = s + before.length;
+    editor.selectionEnd   = s + before.length + (selected || 'text').length;
+    editor.focus();
+    updatePreview(); updateWordCount(); updateEmptyHint(); autoSave();
+  }
+
+  function insertLine(prefix) {
+    const s = editor.selectionStart;
+    const lineStart = editor.value.lastIndexOf('\n', s - 1) + 1;
+    editor.value = editor.value.substring(0, lineStart) + prefix + editor.value.substring(lineStart);
+    editor.selectionStart = editor.selectionEnd = s + prefix.length;
+    editor.focus();
+    updatePreview(); updateWordCount(); updateEmptyHint(); autoSave();
+  }
+
+  function insertLink() {
+    const s = editor.selectionStart;
+    const e = editor.selectionEnd;
+    const selected = editor.value.substring(s, e) || 'Link text';
+    const replacement = `[${selected}](url)`;
+    editor.value = editor.value.substring(0, s) + replacement + editor.value.substring(e);
+    editor.selectionStart = s + selected.length + 3;
+    editor.selectionEnd   = s + selected.length + 3 + 3;
+    editor.focus();
+    updatePreview(); updateWordCount(); updateEmptyHint(); autoSave();
+  }
+
+  function insertCodeBlock() {
+    const s = editor.selectionStart;
+    const snippet = '\n```\ncode here\n```\n';
+    editor.value = editor.value.substring(0, s) + snippet + editor.value.substring(s);
+    editor.selectionStart = editor.selectionEnd = s + 5;
+    editor.focus();
+    updatePreview(); updateWordCount(); updateEmptyHint(); autoSave();
+  }
+
+  // ── INIT ──────────────────────────────────────────────────
+  loadDoc();
+  lucide.createIcons();
+</script>
+</body>
+</html>

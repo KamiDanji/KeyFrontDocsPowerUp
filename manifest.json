@@ -1,0 +1,13 @@
+{
+  "name": "IronWake Docs",
+  "details": "A living Markdown document editor embedded directly in your Trello cards.",
+  "icon": "./assets/icon.svg",
+  "author": "KeyFront",
+  "capabilities": ["card-buttons", "card-back-section"],
+  "connectors": {
+    "iframe": {
+      "url": "./card-back.html",
+      "height": 500
+    }
+  }
+}
